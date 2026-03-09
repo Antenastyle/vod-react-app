@@ -8,7 +8,7 @@ export class GetMovies {
     this.movieRepository = movieRepository;
   }
 
-  async execute(): Promise<Movie[]> {
-    return this.movieRepository.getAll();
+  async execute(limit?: number, startAfterId?: number): Promise<Movie[]> {
+    return this.movieRepository.getAll(limit, startAfterId);
   }
 }
