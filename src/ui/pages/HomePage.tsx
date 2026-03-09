@@ -9,7 +9,8 @@ export function HomePage() {
   const [lastTmdbId, setLastTmdbId] = useState<number | undefined>();
   const [hasMore, setHasMore] = useState(true);
 
-  const initialLoad = useRef(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const LIMIT = 32;
 
@@ -32,11 +33,18 @@ export function HomePage() {
   };
 
   useEffect(() => {
-    if (initialLoad.current) return;
+    if (!sentinelRef.current) return;
 
-    initialLoad.current = true;
-    loadMovies();
-  }, []);
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        loadMovies();
+      }
+    });
+
+    observerRef.current.observe(sentinelRef.current);
+
+    return () => observerRef.current?.disconnect();
+  }, [lastTmdbId, hasMore]);
 
   return (
     <div className="max-w-8xl mx-auto px-6 py-10">
@@ -48,15 +56,9 @@ export function HomePage() {
         ))}
       </div>
 
-      {hasMore && (
-        <button
-          className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={loadMovies}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Load more"}
-        </button>
-      )}
+      <div ref={sentinelRef} className="h-10 flex justify-center items-center">
+        {loading && <p>Loading more movies...</p>}
+      </div>
     </div>
   );
 }
