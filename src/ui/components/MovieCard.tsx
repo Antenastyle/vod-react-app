@@ -22,6 +22,10 @@ export function MovieCard({ movie }: Props) {
           <h2 className="text-sm font-semibold truncate">{movie.title}</h2>
 
           <p className="text-xs text-gray-500">
+            {movie.categories.length > 0 ? movie.categories.slice(0, 2).join(", ") : "No Category"}
+          </p>
+
+          <p className="text-xs text-gray-500">
             {movie.releaseYear}
           </p>
 
