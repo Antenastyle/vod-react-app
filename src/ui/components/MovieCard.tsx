@@ -31,10 +31,6 @@ export function MovieCard({ movie }: Props) {
               ? movie.categories.slice(0, 2).join(" • ")
               : "No category"}
           </p>
-
-          <p className="text-xs font-bold text-amber-600">
-            ⭐ {movie.averageRating.toFixed(1)}
-          </p>
         </div>
       </article>
     </Link>
