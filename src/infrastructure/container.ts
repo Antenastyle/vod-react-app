@@ -4,6 +4,8 @@ import { GetMovies } from "../application/usecases/GetMovies";
 import { GetMovieById } from "../application/usecases/GetMovieById";
 import { SubmitMovieRating } from "../application/usecases/SubmitMovieRating";
 import { GetUserMovieRating } from "../application/usecases/GetUserMovieRating";
+import { GetMovieComments } from "../application/usecases/GetMovieComments";
+import { AddMovieComment } from "../application/usecases/AddMovieComment";
 import { RegisterUser } from "../application/usecases/RegisterUser";
 import { LoginUser } from "../application/usecases/LoginUser";
 import { LogoutUser } from "../application/usecases/LogoutUser";
@@ -18,6 +20,8 @@ export const container = {
   getMovieById: new GetMovieById(movieRepository),
   submitMovieRating: new SubmitMovieRating(movieRepository),
   getUserMovieRating: new GetUserMovieRating(movieRepository),
+  getMovieComments: new GetMovieComments(movieRepository),
+  addMovieComment: new AddMovieComment(movieRepository),
   registerUser: new RegisterUser(authRepository),
   loginUser: new LoginUser(authRepository),
   logoutUser: new LogoutUser(authRepository),
