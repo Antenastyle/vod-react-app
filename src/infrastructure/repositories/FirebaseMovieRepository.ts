@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   getDocs,
   doc,
   getDoc,
@@ -10,6 +11,7 @@ import {
   limit,
   runTransaction,
   serverTimestamp,
+  setDoc,
   startAfter,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
@@ -197,5 +199,56 @@ export class FirebaseMovieRepository implements MovieRepository {
       text: normalizedText,
       createdAtMs,
     };
+  }
+
+  async getFavorites(userId: string): Promise<Movie[]> {
+    const favoritesQuery = query(
+      collection(db, "users", userId, "favorites"),
+      orderBy("createdAtMs", "desc"),
+    );
+
+    const snapshot = await getDocs(favoritesQuery);
+
+    return snapshot.docs.map(
+      (favoriteDoc) =>
+        ({
+          id: favoriteDoc.id,
+          ...favoriteDoc.data(),
+        }) as Movie,
+    );
+  }
+
+  async isFavorite(movieId: string, userId: string): Promise<boolean> {
+    const favoriteRef = doc(db, "users", userId, "favorites", movieId);
+    const favoriteDoc = await getDoc(favoriteRef);
+
+    return favoriteDoc.exists();
+  }
+
+  async addToFavorites(userId: string, movie: Movie): Promise<void> {
+    const favoriteRef = doc(db, "users", userId, "favorites", movie.id);
+
+    await setDoc(
+      favoriteRef,
+      {
+        title: movie.title,
+        description: movie.description,
+        categories: movie.categories,
+        releaseDate: movie.releaseDate ?? null,
+        releaseYear: movie.releaseYear,
+        posterUrl: movie.posterUrl,
+        averageRating: movie.averageRating,
+        ratingsCount: movie.ratingsCount ?? 0,
+        tmdbId: movie.tmdbId,
+        createdAt: serverTimestamp(),
+        createdAtMs: Date.now(),
+      },
+      { merge: true },
+    );
+  }
+
+  async removeFromFavorites(userId: string, movieId: string): Promise<void> {
+    const favoriteRef = doc(db, "users", userId, "favorites", movieId);
+    await deleteDoc(favoriteRef);
   }
 }

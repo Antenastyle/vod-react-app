@@ -23,4 +23,8 @@ export interface MovieRepository {
     userEmail: string,
     text: string,
   ): Promise<MovieComment>;
+  getFavorites(userId: string): Promise<Movie[]>;
+  isFavorite(movieId: string, userId: string): Promise<boolean>;
+  addToFavorites(userId: string, movie: Movie): Promise<void>;
+  removeFromFavorites(userId: string, movieId: string): Promise<void>;
 }
