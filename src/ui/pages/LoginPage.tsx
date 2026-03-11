@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { AuthUser } from "../../domain/entities/AuthUser";
 import { container } from "../../infrastructure/container";
 
 export function LoginPage() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +61,7 @@ export function LoginPage() {
 
       setPassword("");
       setConfirmPassword("");
+      navigate("/", { replace: true });
     } catch (submitError) {
       const message =
         submitError instanceof Error
