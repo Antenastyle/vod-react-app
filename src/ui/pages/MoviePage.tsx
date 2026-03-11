@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import type { AuthUser } from "../../domain/entities/AuthUser";
 import type { Movie } from "../../domain/entities/Movie";
 import { container } from "../../infrastructure/container";
 import { MovieRatingSection } from "../components/MovieRatingSection";
@@ -75,7 +76,20 @@ function formatReleaseDate(movie: Movie) {
 export function MoviePage() {
   const { id } = useParams<{ id: string }>();
   const [movie, setMovie] = useState<Movie | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setCurrentUser(container.getCurrentUser.execute());
+
+    const unsubscribe = container.observeAuthState.execute((user) => {
+      setCurrentUser(user);
+    });
+
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -92,6 +106,44 @@ export function MoviePage() {
 
     fetchMovie();
   }, [id]);
+
+  useEffect(() => {
+    const fetchFavoriteState = async () => {
+      if (!movie?.id || !currentUser?.uid) {
+        setIsFavorite(false);
+        return;
+      }
+
+      const favoriteStatus = await container.isMovieFavorite.execute(
+        movie.id,
+        currentUser.uid,
+      );
+      setIsFavorite(favoriteStatus);
+    };
+
+    fetchFavoriteState();
+  }, [movie?.id, currentUser?.uid]);
+
+  const handleFavoriteToggle = async () => {
+    if (!movie || !currentUser) return;
+
+    setFavoriteLoading(true);
+
+    try {
+      if (isFavorite) {
+        await container.removeMovieFromFavorites.execute(
+          currentUser.uid,
+          movie.id,
+        );
+        setIsFavorite(false);
+      } else {
+        await container.addMovieToFavorites.execute(currentUser.uid, movie);
+        setIsFavorite(true);
+      }
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -139,47 +191,72 @@ export function MoviePage() {
           </div>
 
           <div className="space-y-6 p-6 sm:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-start">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">
                   Featured movie
                 </p>
                 <h1 className="display-title mt-2 text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
                   {movie.title}
                 </h1>
+
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  {movie.categories.map((category) => (
+                    <span
+                      key={category}
+                      className="rounded-full border border-teal-200 bg-teal-100/80 px-3.5 py-1.5 text-xs font-semibold text-teal-900"
+                    >
+                      {category}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div className="min-w-[190px] rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-3 text-right shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
-                  Community rating
-                </p>
-                <div className="mt-1 flex items-end justify-end gap-1.5">
-                  <span className="text-2xl font-bold text-amber-700">
-                    {movie.averageRating.toFixed(1)}
-                  </span>
-                  <span className="pb-1 text-xs font-semibold text-slate-500">
-                    / 5
-                  </span>
+              <div className="space-y-2">
+                <div className="min-w-[190px] rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-3 text-right shadow-sm">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                    Community rating
+                  </p>
+                  <div className="mt-1 flex items-end justify-end gap-1.5">
+                    <span className="text-2xl font-bold text-amber-700">
+                      {movie.averageRating.toFixed(1)}
+                    </span>
+                    <span className="pb-1 text-xs font-semibold text-slate-500">
+                      / 5
+                    </span>
+                  </div>
+                  <div className="mt-1 flex justify-end gap-0.5">
+                    {renderCompactStars(movie.averageRating)}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {movie.ratingsCount ?? 0}{" "}
+                    {movie.ratingsCount === 1 ? "vote" : "votes"}
+                  </p>
                 </div>
-                <div className="mt-1 flex justify-end gap-0.5">
-                  {renderCompactStars(movie.averageRating)}
-                </div>
-                <p className="mt-1 text-xs text-slate-600">
-                  {movie.ratingsCount ?? 0}{" "}
-                  {movie.ratingsCount === 1 ? "vote" : "votes"}
-                </p>
-              </div>
-            </div>
 
-            <div className="flex flex-wrap gap-2.5">
-              {movie.categories.map((category) => (
-                <span
-                  key={category}
-                  className="rounded-full border border-teal-200 bg-teal-100/80 px-3.5 py-1.5 text-xs font-semibold text-teal-900"
-                >
-                  {category}
-                </span>
-              ))}
+                {currentUser ? (
+                  <button
+                    type="button"
+                    onClick={handleFavoriteToggle}
+                    disabled={favoriteLoading}
+                    className={`w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                      isFavorite
+                        ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                        : "border-teal-700 bg-teal-700 text-white hover:bg-teal-800"
+                    }`}
+                  >
+                    {favoriteLoading
+                      ? "Saving..."
+                      : isFavorite
+                        ? "♥ In favorites"
+                        : "♡ Add to favorites"}
+                  </button>
+                ) : (
+                  <p className="rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-center text-xs text-slate-600">
+                    Log in to save this movie
+                  </p>
+                )}
+              </div>
             </div>
 
             <p className="max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">
