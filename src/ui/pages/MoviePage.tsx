@@ -2,6 +2,74 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Movie } from "../../domain/entities/Movie";
 import { container } from "../../infrastructure/container";
+import { MovieRatingSection } from "../components/MovieRatingSection";
+
+function getStarFillPercentage(value: number, star: number) {
+  return Math.max(0, Math.min(100, (value - (star - 1)) * 100));
+}
+
+function renderCompactStars(value: number) {
+  return Array.from({ length: 5 }, (_, index) => {
+    const star = index + 1;
+    const fillPercentage = getStarFillPercentage(value, star);
+
+    return (
+      <span key={star} className="relative inline-block h-4 w-4">
+        <svg
+          viewBox="0 0 24 24"
+          className="absolute inset-0 h-full w-full text-slate-300"
+          aria-hidden="true"
+        >
+          <path
+            fill="currentColor"
+            d="M12 2.5l2.93 5.94 6.56.95-4.74 4.62 1.12 6.53L12 17.46l-5.87 3.08 1.12-6.53L2.5 9.39l6.56-.95L12 2.5z"
+          />
+        </svg>
+        <span
+          className="absolute inset-0"
+          style={{ clipPath: `inset(0 ${100 - fillPercentage}% 0 0)` }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-full w-full text-amber-500"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M12 2.5l2.93 5.94 6.56.95-4.74 4.62 1.12 6.53L12 17.46l-5.87 3.08 1.12-6.53L2.5 9.39l6.56-.95L12 2.5z"
+            />
+          </svg>
+        </span>
+      </span>
+    );
+  });
+}
+
+function formatReleaseDate(movie: Movie) {
+  const rawDate = movie.releaseDate;
+
+  if (rawDate) {
+    const parsedDate = new Date(rawDate);
+
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return parsedDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+  }
+
+  if (movie.releaseYear > 0) {
+    return new Date(movie.releaseYear, 0, 1).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  return "Unknown";
+}
 
 export function MoviePage() {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +126,6 @@ export function MoviePage() {
   return (
     <section className="fade-up py-6 sm:py-8">
       <div className="glass-card relative overflow-hidden rounded-3xl border border-white/60">
-
         <div className="relative grid md:grid-cols-[340px_1fr]">
           <div className="p-5 sm:p-6">
             <div className="overflow-hidden rounded-2xl border border-white/60 bg-slate-900 shadow-xl">
@@ -81,12 +148,24 @@ export function MoviePage() {
                 </h1>
               </div>
 
-              <div className="rounded-2xl bg-amber-100/70 px-4 py-3 text-right shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-600">
-                  Rating
+              <div className="min-w-[190px] rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-3 text-right shadow-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                  Community rating
                 </p>
-                <p className="text-xl font-bold text-amber-700">
-                  ⭐ {movie.averageRating.toFixed(1)}
+                <div className="mt-1 flex items-end justify-end gap-1.5">
+                  <span className="text-2xl font-bold text-amber-700">
+                    {movie.averageRating.toFixed(1)}
+                  </span>
+                  <span className="pb-1 text-xs font-semibold text-slate-500">
+                    / 5
+                  </span>
+                </div>
+                <div className="mt-1 flex justify-end gap-0.5">
+                  {renderCompactStars(movie.averageRating)}
+                </div>
+                <p className="mt-1 text-xs text-slate-600">
+                  {movie.ratingsCount ?? 0}{" "}
+                  {movie.ratingsCount === 1 ? "vote" : "votes"}
                 </p>
               </div>
             </div>
@@ -106,22 +185,30 @@ export function MoviePage() {
               {movie.description}
             </p>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <article className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-slate-100">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Release Year
+                  Release Date
                 </p>
-                <p className="mt-2 text-lg font-bold text-slate-900">{movie.releaseYear}</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">
+                  {formatReleaseDate(movie)}
+                </p>
               </article>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Link
-                to="/"
-                className="inline-flex rounded-full bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
-              >
-                Back to catalog
-              </Link>
+              <MovieRatingSection
+                movieId={movie.id}
+                onRatingSaved={(summary) => {
+                  setMovie((previousMovie) =>
+                    previousMovie
+                      ? {
+                          ...previousMovie,
+                          averageRating: summary.averageRating,
+                          ratingsCount: summary.ratingsCount,
+                        }
+                      : previousMovie,
+                  );
+                }}
+              />
             </div>
           </div>
         </div>

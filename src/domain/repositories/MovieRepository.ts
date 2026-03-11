@@ -1,4 +1,5 @@
 import type { Movie } from "../entities/Movie";
+import type { MovieRatingSummary } from "../entities/MovieRatingSummary";
 
 export interface MovieRepository {
   getAll(limit?: number, startAfterId?: number): Promise<Movie[]>;
@@ -8,4 +9,10 @@ export interface MovieRepository {
     limit?: number,
     startAfterId?: number,
   ): Promise<Movie[]>;
+  getUserRating(movieId: string, userId: string): Promise<number | null>;
+  submitRating(
+    movieId: string,
+    userId: string,
+    rating: number,
+  ): Promise<MovieRatingSummary>;
 }
