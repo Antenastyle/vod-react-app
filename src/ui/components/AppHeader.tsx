@@ -55,6 +55,9 @@ export function AppHeader() {
           <NavLink to="/" className={getNavClassName} end>
             Home
           </NavLink>
+          <NavLink to="/favorites" className={getNavClassName}>
+            Favorites
+          </NavLink>
           <NavLink to="/contact" className={getNavClassName}>
             Contact
           </NavLink>
