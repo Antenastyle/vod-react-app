@@ -2,6 +2,33 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Movie } from "../../domain/entities/Movie";
 import { container } from "../../infrastructure/container";
+import { MovieRatingSection } from "../components/MovieRatingSection";
+
+function formatReleaseDate(movie: Movie) {
+  const rawDate = movie.releaseDate;
+
+  if (rawDate) {
+    const parsedDate = new Date(rawDate);
+
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return parsedDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+  }
+
+  if (movie.releaseYear > 0) {
+    return new Date(movie.releaseYear, 0, 1).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  return "Unknown";
+}
 
 export function MoviePage() {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +85,6 @@ export function MoviePage() {
   return (
     <section className="fade-up py-6 sm:py-8">
       <div className="glass-card relative overflow-hidden rounded-3xl border border-white/60">
-
         <div className="relative grid md:grid-cols-[340px_1fr]">
           <div className="p-5 sm:p-6">
             <div className="overflow-hidden rounded-2xl border border-white/60 bg-slate-900 shadow-xl">
@@ -88,6 +114,9 @@ export function MoviePage() {
                 <p className="text-xl font-bold text-amber-700">
                   ⭐ {movie.averageRating.toFixed(1)}
                 </p>
+                <p className="text-xs text-slate-600">
+                  {movie.ratingsCount ?? 0} user ratings
+                </p>
               </div>
             </div>
 
@@ -106,22 +135,30 @@ export function MoviePage() {
               {movie.description}
             </p>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <article className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-slate-100">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Release Year
+                  Release Date
                 </p>
-                <p className="mt-2 text-lg font-bold text-slate-900">{movie.releaseYear}</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">
+                  {formatReleaseDate(movie)}
+                </p>
               </article>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Link
-                to="/"
-                className="inline-flex rounded-full bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
-              >
-                Back to catalog
-              </Link>
+              <MovieRatingSection
+                movieId={movie.id}
+                onRatingSaved={(summary) => {
+                  setMovie((previousMovie) =>
+                    previousMovie
+                      ? {
+                          ...previousMovie,
+                          averageRating: summary.averageRating,
+                          ratingsCount: summary.ratingsCount,
+                        }
+                      : previousMovie,
+                  );
+                }}
+              />
             </div>
           </div>
         </div>
