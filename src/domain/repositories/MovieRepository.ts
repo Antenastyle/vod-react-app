@@ -1,4 +1,5 @@
 import type { Movie } from "../entities/Movie";
+import type { MovieComment } from "../entities/MovieComment";
 import type { MovieRatingSummary } from "../entities/MovieRatingSummary";
 
 export interface MovieRepository {
@@ -15,4 +16,11 @@ export interface MovieRepository {
     userId: string,
     rating: number,
   ): Promise<MovieRatingSummary>;
+  getComments(movieId: string): Promise<MovieComment[]>;
+  addComment(
+    movieId: string,
+    userId: string,
+    userEmail: string,
+    text: string,
+  ): Promise<MovieComment>;
 }
