@@ -6,5 +6,6 @@ export interface Movie {
   releaseYear: number;
   posterUrl: string;
   averageRating: number;
+  ratingsCount?: number;
   tmdbId: number;
 }
