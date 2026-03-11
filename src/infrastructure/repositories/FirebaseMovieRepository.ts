@@ -62,7 +62,12 @@ export class FirebaseMovieRepository implements MovieRepository {
         limit(limitCount),
       );
     } else {
-      q = query(collection(db, "movies"), where("categories", "array-contains", category), orderBy("tmdbId"), limit(limitCount));
+      q = query(
+        collection(db, "movies"),
+        where("categories", "array-contains", category),
+        orderBy("tmdbId"),
+        limit(limitCount),
+      );
     }
 
     const snapshot = await getDocs(q);
