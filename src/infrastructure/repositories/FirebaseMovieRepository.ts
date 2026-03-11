@@ -1,4 +1,5 @@
 import {
+  addDoc,
   collection,
   getDocs,
   doc,
@@ -12,6 +13,7 @@ import {
   startAfter,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+import type { MovieComment } from "../../domain/entities/MovieComment";
 import type { Movie } from "../../domain/entities/Movie";
 import type { MovieRatingSummary } from "../../domain/entities/MovieRatingSummary";
 import type { MovieRepository } from "../../domain/repositories/MovieRepository";
@@ -144,5 +146,56 @@ export class FirebaseMovieRepository implements MovieRepository {
         ratingsCount: nextCount,
       };
     });
+  }
+
+  async getComments(movieId: string): Promise<MovieComment[]> {
+    const commentsQuery = query(
+      collection(db, "movies", movieId, "comments"),
+      orderBy("createdAtMs", "asc"),
+    );
+
+    const snapshot = await getDocs(commentsQuery);
+
+    return snapshot.docs.map(
+      (commentDoc) =>
+        ({
+          id: commentDoc.id,
+          ...commentDoc.data(),
+        }) as MovieComment,
+    );
+  }
+
+  async addComment(
+    movieId: string,
+    userId: string,
+    userEmail: string,
+    text: string,
+  ): Promise<MovieComment> {
+    const normalizedText = text.trim();
+
+    if (!normalizedText) {
+      throw new Error("Comment cannot be empty.");
+    }
+
+    const commentsCollection = collection(db, "movies", movieId, "comments");
+    const createdAtMs = Date.now();
+
+    const commentRef = await addDoc(commentsCollection, {
+      movieId,
+      userId,
+      userEmail,
+      text: normalizedText,
+      createdAt: serverTimestamp(),
+      createdAtMs,
+    });
+
+    return {
+      id: commentRef.id,
+      movieId,
+      userId,
+      userEmail,
+      text: normalizedText,
+      createdAtMs,
+    };
   }
 }
