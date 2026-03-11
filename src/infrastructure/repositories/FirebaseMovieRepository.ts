@@ -21,6 +21,8 @@ import type { MovieRatingSummary } from "../../domain/entities/MovieRatingSummar
 import type { MovieRepository } from "../../domain/repositories/MovieRepository";
 
 export class FirebaseMovieRepository implements MovieRepository {
+  private searchCache: Movie[] | null = null;
+
   async getAll(
     limitCount: number = 32,
     startAfterId?: number,
@@ -40,6 +42,27 @@ export class FirebaseMovieRepository implements MovieRepository {
 
     const snapshot = await getDocs(q);
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Movie);
+  }
+
+  async searchByTitle(
+    title: string,
+    limitCount: number = 40,
+  ): Promise<Movie[]> {
+    const normalizedTitle = title.trim().toLowerCase();
+
+    if (!normalizedTitle) return [];
+
+    if (!this.searchCache) {
+      const allMoviesQuery = query(collection(db, "movies"), orderBy("title"));
+      const snapshot = await getDocs(allMoviesQuery);
+      this.searchCache = snapshot.docs.map(
+        (movieDoc) => ({ id: movieDoc.id, ...movieDoc.data() }) as Movie,
+      );
+    }
+
+    return this.searchCache
+      .filter((movie) => movie.title.toLowerCase().includes(normalizedTitle))
+      .slice(0, limitCount);
   }
 
   async getById(id: string): Promise<Movie | null> {

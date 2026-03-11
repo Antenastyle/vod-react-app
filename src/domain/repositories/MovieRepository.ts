@@ -4,6 +4,7 @@ import type { MovieRatingSummary } from "../entities/MovieRatingSummary";
 
 export interface MovieRepository {
   getAll(limit?: number, startAfterId?: number): Promise<Movie[]>;
+  searchByTitle(title: string, limit?: number): Promise<Movie[]>;
   getById(id: string): Promise<Movie | null>;
   getByCategory(
     category: string,

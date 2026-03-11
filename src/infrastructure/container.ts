@@ -1,6 +1,7 @@
 import { FirebaseMovieRepository } from "./repositories/FirebaseMovieRepository";
 import { FirebaseAuthRepository } from "./repositories/FirebaseAuthRepository";
 import { GetMovies } from "../application/usecases/GetMovies";
+import { SearchMoviesByTitle } from "../application/usecases/SearchMoviesByTitle";
 import { GetMovieById } from "../application/usecases/GetMovieById";
 import { SubmitMovieRating } from "../application/usecases/SubmitMovieRating";
 import { GetUserMovieRating } from "../application/usecases/GetUserMovieRating";
@@ -21,6 +22,7 @@ const authRepository = new FirebaseAuthRepository();
 
 export const container = {
   getMovies: new GetMovies(movieRepository),
+  searchMoviesByTitle: new SearchMoviesByTitle(movieRepository),
   getMovieById: new GetMovieById(movieRepository),
   submitMovieRating: new SubmitMovieRating(movieRepository),
   getUserMovieRating: new GetUserMovieRating(movieRepository),

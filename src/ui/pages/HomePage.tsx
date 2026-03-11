@@ -5,39 +5,54 @@ import { MovieCard } from "../components/MovieCard";
 
 export function HomePage() {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [searchedMovies, setSearchedMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [lastTmdbId, setLastTmdbId] = useState<number | undefined>();
   const [hasMore, setHasMore] = useState(true);
   const [selectedCategory, setSelectedCategory] =
     useState<string>("All categories");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const LIMIT = 32;
+  const normalizedSearch = searchTerm.trim();
+  const isSearchMode = normalizedSearch.length > 0;
+
+  const sourceMovies = isSearchMode ? searchedMovies : movies;
 
   const categoryOptions = useMemo(() => {
     const uniqueCategories = new Set<string>();
 
-    movies.forEach((movie) => {
+    sourceMovies.forEach((movie) => {
       movie.categories.forEach((category) => {
         if (category) uniqueCategories.add(category);
       });
     });
 
     return ["All categories", ...Array.from(uniqueCategories).sort()];
-  }, [movies]);
+  }, [sourceMovies]);
 
   const filteredMovies = useMemo(() => {
-    if (selectedCategory === "All categories") return movies;
+    const lowerSearch = normalizedSearch.toLowerCase();
 
-    return movies.filter((movie) =>
-      movie.categories.includes(selectedCategory)
-    );
-  }, [movies, selectedCategory]);
+    return sourceMovies.filter((movie) => {
+      const matchesCategory =
+        selectedCategory === "All categories" ||
+        movie.categories.includes(selectedCategory);
+
+      const matchesSearch =
+        lowerSearch.length === 0 ||
+        movie.title.toLowerCase().includes(lowerSearch);
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [sourceMovies, selectedCategory, normalizedSearch]);
 
   const loadMovies = async () => {
-    if (loading || !hasMore) return;
+    if (loading || !hasMore || isSearchMode) return;
 
     setLoading(true);
 
@@ -55,7 +70,30 @@ export function HomePage() {
   };
 
   useEffect(() => {
-    if (!sentinelRef.current) return;
+    const searchByTitle = async () => {
+      if (!isSearchMode) {
+        setSearchedMovies([]);
+        return;
+      }
+
+      setSearchLoading(true);
+
+      try {
+        const searchResults = await container.searchMoviesByTitle.execute(
+          normalizedSearch,
+          80,
+        );
+        setSearchedMovies(searchResults);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    searchByTitle();
+  }, [isSearchMode, normalizedSearch]);
+
+  useEffect(() => {
+    if (!sentinelRef.current || isSearchMode) return;
 
     observerRef.current = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
@@ -66,7 +104,7 @@ export function HomePage() {
     observerRef.current.observe(sentinelRef.current);
 
     return () => observerRef.current?.disconnect();
-  }, [lastTmdbId, hasMore]);
+  }, [lastTmdbId, hasMore, isSearchMode]);
 
   return (
     <section className="fade-up py-6 sm:py-8">
@@ -83,25 +121,44 @@ export function HomePage() {
         </p>
       </div>
 
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <label
-          htmlFor="category-filter"
-          className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600"
-        >
-          Filter by category
-        </label>
-        <select
-          id="category-filter"
-          value={selectedCategory}
-          onChange={(event) => setSelectedCategory(event.target.value)}
-          className="w-full rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition focus:border-teal-700 sm:max-w-xs"
-        >
-          {categoryOptions.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label
+            htmlFor="movie-search"
+            className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-600"
+          >
+            Search by title
+          </label>
+          <input
+            id="movie-search"
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search movies..."
+            className="w-full rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition focus:border-teal-700"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="category-filter"
+            className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-600"
+          >
+            Filter by category
+          </label>
+          <select
+            id="category-filter"
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            className="w-full rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition focus:border-teal-700"
+          >
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
@@ -110,7 +167,22 @@ export function HomePage() {
         ))}
       </div>
 
-      <div ref={sentinelRef} className="h-14 flex items-center justify-center">
+      {searchLoading ? (
+        <p className="mt-6 text-sm text-slate-600">Searching movies...</p>
+      ) : null}
+
+      {filteredMovies.length === 0 && !searchLoading ? (
+        <p className="mt-6 text-sm text-slate-600">
+          No movies found with the current filters.
+        </p>
+      ) : null}
+
+      <div
+        ref={sentinelRef}
+        className={`h-14 items-center justify-center ${
+          isSearchMode ? "hidden" : "flex"
+        }`}
+      >
         {loading && (
           <p className="rounded-full bg-white/80 px-4 py-2 text-sm text-slate-600 shadow-sm">
             Loading more movies...
