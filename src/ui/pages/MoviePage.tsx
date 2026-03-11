@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import type { Movie } from "../../domain/entities/Movie";
 import { container } from "../../infrastructure/container";
 import { MovieRatingSection } from "../components/MovieRatingSection";
+import { MovieCommentsSection } from "../components/MovieCommentsSection";
 
 function getStarFillPercentage(value: number, star: number) {
   return Math.max(0, Math.min(100, (value - (star - 1)) * 100));
@@ -213,6 +214,8 @@ export function MoviePage() {
           </div>
         </div>
       </div>
+
+      <MovieCommentsSection movieId={movie.id} />
     </section>
   );
 }
