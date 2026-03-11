@@ -4,6 +4,47 @@ import type { Movie } from "../../domain/entities/Movie";
 import { container } from "../../infrastructure/container";
 import { MovieRatingSection } from "../components/MovieRatingSection";
 
+function getStarFillPercentage(value: number, star: number) {
+  return Math.max(0, Math.min(100, (value - (star - 1)) * 100));
+}
+
+function renderCompactStars(value: number) {
+  return Array.from({ length: 5 }, (_, index) => {
+    const star = index + 1;
+    const fillPercentage = getStarFillPercentage(value, star);
+
+    return (
+      <span key={star} className="relative inline-block h-4 w-4">
+        <svg
+          viewBox="0 0 24 24"
+          className="absolute inset-0 h-full w-full text-slate-300"
+          aria-hidden="true"
+        >
+          <path
+            fill="currentColor"
+            d="M12 2.5l2.93 5.94 6.56.95-4.74 4.62 1.12 6.53L12 17.46l-5.87 3.08 1.12-6.53L2.5 9.39l6.56-.95L12 2.5z"
+          />
+        </svg>
+        <span
+          className="absolute inset-0"
+          style={{ clipPath: `inset(0 ${100 - fillPercentage}% 0 0)` }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-full w-full text-amber-500"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M12 2.5l2.93 5.94 6.56.95-4.74 4.62 1.12 6.53L12 17.46l-5.87 3.08 1.12-6.53L2.5 9.39l6.56-.95L12 2.5z"
+            />
+          </svg>
+        </span>
+      </span>
+    );
+  });
+}
+
 function formatReleaseDate(movie: Movie) {
   const rawDate = movie.releaseDate;
 
@@ -107,15 +148,24 @@ export function MoviePage() {
                 </h1>
               </div>
 
-              <div className="rounded-2xl bg-amber-100/70 px-4 py-3 text-right shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-600">
-                  Rating
+              <div className="min-w-[190px] rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-3 text-right shadow-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                  Community rating
                 </p>
-                <p className="text-xl font-bold text-amber-700">
-                  ⭐ {movie.averageRating.toFixed(1)}
-                </p>
-                <p className="text-xs text-slate-600">
-                  {movie.ratingsCount ?? 0} user ratings
+                <div className="mt-1 flex items-end justify-end gap-1.5">
+                  <span className="text-2xl font-bold text-amber-700">
+                    {movie.averageRating.toFixed(1)}
+                  </span>
+                  <span className="pb-1 text-xs font-semibold text-slate-500">
+                    / 5
+                  </span>
+                </div>
+                <div className="mt-1 flex justify-end gap-0.5">
+                  {renderCompactStars(movie.averageRating)}
+                </div>
+                <p className="mt-1 text-xs text-slate-600">
+                  {movie.ratingsCount ?? 0}{" "}
+                  {movie.ratingsCount === 1 ? "vote" : "votes"}
                 </p>
               </div>
             </div>
