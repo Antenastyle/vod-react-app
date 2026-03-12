@@ -1,12 +1,7 @@
-function App() {
+import { AppRouter } from "./ui/router/AppRouter"
 
-  return (
-    <>
-      <div>
-        <h1 className="text-3xl font-bold underline">Hello world!</h1>
-      </div>
-    </>
-  );
+function App() {
+  return <AppRouter />
 }
 
 export default App;
