@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="VOD favicon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1f2937" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#bg)" />
+  <rect x="14" y="14" width="36" height="36" rx="8" fill="#111827" stroke="#334155" stroke-width="2" />
+
+  <polygon points="28,24 28,40 40,32" fill="url(#accent)" />
+
+  <circle cx="52" cy="14" r="8" fill="#0ea5e9" />
+  <path d="M52 9.8l1.2 2.5 2.8.4-2 2 0.5 2.8-2.5-1.4-2.5 1.4 0.5-2.8-2-2 2.8-.4z" fill="#f8fafc" />
+</svg>
