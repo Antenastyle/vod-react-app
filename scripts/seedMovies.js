@@ -60,7 +60,7 @@ async function seedMovies() {
           ? Number(movie.release_date.substring(0, 4))
           : 0,
         posterUrl: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
-        averageRating: movie.vote_average,
+        averageRating: 0,
       };
 
       await db.collection("movies").add(movieData);
